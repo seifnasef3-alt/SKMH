@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+pytesseract
+opencv-python-headless
+pdfplumber
+pymupdf
+spacy
+scikit-learn
+sqlalchemy
+psycopg2-binary
+python-multipart
+pillow
+numpy
