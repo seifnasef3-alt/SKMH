@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SKMH — OCR Demo</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #F0F4F8;
+      color: #1E293B;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: #065A82;
+      color: white;
+      padding: 18px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 4px solid #02C39A;
+    }
+    header .logo { font-size: 22px; font-weight: bold; }
+    header .subtitle { font-size: 13px; color: #A8D8F0; margin-top: 2px; }
+    header .badge {
+      background: #02C39A;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    /* ── Main layout ── */
+    main {
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+
+    h2 {
+      font-size: 20px;
+      color: #065A82;
+      margin-bottom: 6px;
+    }
+    .section-desc {
+      font-size: 13px;
+      color: #55657A;
+      margin-bottom: 20px;
+    }
+
+    /* ── Upload zone ── */
+    .upload-zone {
+      background: white;
+      border: 2px dashed #CBD5E0;
+      border-radius: 10px;
+      padding: 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      margin-bottom: 20px;
+    }
+    .upload-zone:hover, .upload-zone.dragover {
+      border-color: #02C39A;
+      background: #F0FBF8;
+    }
+    .upload-zone input { display: none; }
+    .upload-zone .icon { font-size: 40px; margin-bottom: 10px; }
+    .upload-zone p { color: #55657A; font-size: 14px; }
+    .upload-zone .hint { font-size: 12px; color: #A0AFC0; margin-top: 6px; }
+    .upload-zone .filename {
+      margin-top: 12px;
+      font-weight: bold;
+      color: #065A82;
+      font-size: 14px;
+    }
+
+    /* ── Button ── */
+    button {
+      background: #065A82;
+      color: white;
+      border: none;
+      padding: 12px 32px;
+      border-radius: 6px;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+      width: 100%;
+      transition: background 0.2s;
+    }
+    button:hover { background: #1C7293; }
+    button:disabled { background: #A0AFC0; cursor: not-allowed; }
+
+    /* ── Status bar ── */
+    .status {
+      margin-top: 16px;
+      padding: 10px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: bold;
+      display: none;
+    }
+    .status.loading { background: #E0F0FB; color: #065A82; display: block; }
+    .status.success { background: #D4F5EC; color: #027A55; display: block; }
+    .status.error   { background: #FDE8E8; color: #C0392B; display: block; }
+
+    /* ── Results ── */
+    .results {
+      margin-top: 28px;
+      display: none;
+    }
+    .results.visible { display: block; }
+
+    .stats {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: white;
+      border-radius: 8px;
+      padding: 16px 24px;
+      flex: 1;
+      border-top: 4px solid #065A82;
+      text-align: center;
+    }
+    .stat-card .val {
+      font-size: 28px;
+      font-weight: bold;
+      color: #065A82;
+    }
+    .stat-card .lbl {
+      font-size: 12px;
+      color: #55657A;
+      margin-top: 2px;
+    }
+    .stat-card:nth-child(2) { border-top-color: #02C39A; }
+    .stat-card:nth-child(2) .val { color: #02C39A; }
+    .stat-card:nth-child(3) { border-top-color: #1C7293; }
+    .stat-card:nth-child(3) .val { color: #1C7293; }
+
+    .text-output {
+      background: white;
+      border-radius: 8px;
+      border: 1px solid #CBD5E0;
+      overflow: hidden;
+    }
+    .text-output .output-header {
+      background: #065A82;
+      color: white;
+      padding: 10px 18px;
+      font-size: 13px;
+      font-weight: bold;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .text-output .output-header button {
+      background: #02C39A;
+      padding: 4px 14px;
+      font-size: 12px;
+      width: auto;
+      border-radius: 4px;
+    }
+    .text-output .output-header button:hover { background: #01A884; }
+    .text-output pre {
+      padding: 20px;
+      font-size: 13px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 350px;
+      overflow-y: auto;
+      line-height: 1.7;
+      color: #1E293B;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 30px;
+      font-size: 12px;
+      color: #A0AFC0;
+      margin-top: 40px;
+      border-top: 1px solid #CBD5E0;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">SKMH</div>
+    <div class="subtitle">Smart Knowledge Management Hub — OCR Demo</div>
+  </div>
+  <div class="badge">Phase 2 — In Progress</div>
+</header>
+
+<main>
+  <h2>Document Upload & Text Extraction</h2>
+  <p class="section-desc">Upload a PDF or image — the OCR pipeline will extract the text automatically.</p>
+
+  <!-- Upload zone -->
+  <div class="upload-zone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+    <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png" />
+    <div class="icon">📄</div>
+    <p>Click to upload or drag & drop your file here</p>
+    <p class="hint">Supported formats: PDF, JPG, PNG — Languages: French, English, Thai</p>
+    <div class="filename" id="filename"></div>
+  </div>
+
+  <button id="uploadBtn" onclick="uploadFile()" disabled>Extract Text</button>
+
+  <div class="status" id="status"></div>
+
+  <!-- Results -->
+  <div class="results" id="results">
+    <div class="stats">
+      <div class="stat-card">
+        <div class="val" id="statWords">—</div>
+        <div class="lbl">Words extracted</div>
+      </div>
+      <div class="stat-card">
+        <div class="val" id="statChars">—</div>
+        <div class="lbl">Characters</div>
+      </div>
+      <div class="stat-card">
+        <div class="val" id="statType">—</div>
+        <div class="lbl">File type</div>
+      </div>
+    </div>
+
+    <div class="text-output">
+      <div class="output-header">
+        <span>Extracted Text</span>
+        <button onclick="copyText()">Copy</button>
+      </div>
+      <pre id="outputText"></pre>
+    </div>
+  </div>
+</main>
+
+<footer>
+  SKMH Project · Seïf NASEF · KUIC Bangkok 2026 · Phase 2 — OCR Pipeline
+</footer>
+
+<script>
+  const fileInput = document.getElementById('fileInput');
+  const uploadBtn = document.getElementById('uploadBtn');
+  const filenameDiv = document.getElementById('filename');
+  const statusDiv = document.getElementById('status');
+  const resultsDiv = document.getElementById('results');
+
+  // ── File selection ──
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0];
+    if (file) {
+      filenameDiv.textContent = '📎 ' + file.name;
+      uploadBtn.disabled = false;
+    }
+  });
+
+  // ── Drag & drop ──
+  const dropzone = document.getElementById('dropzone');
+  dropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropzone.classList.add('dragover');
+  });
+  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+  dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      fileInput.files = e.dataTransfer.files;
+      filenameDiv.textContent = '📎 ' + file.name;
+      uploadBtn.disabled = false;
+    }
+  });
+
+  // ── Upload & call API ──
+  async function uploadFile() {
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    // Show loading
+    setStatus('loading', '⏳ Processing document — extracting text...');
+    uploadBtn.disabled = true;
+    resultsDiv.classList.remove('visible');
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch('/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error('Server error: ' + response.status);
+
+      const data = await response.json();
+
+      if (data.error) {
+        setStatus('error', '❌ Error: ' + data.error);
+      } else {
+        // Show results
+        setStatus('success', '✅ Text extracted successfully!');
+        document.getElementById('statWords').textContent = data.word_count ?? '—';
+        document.getElementById('statChars').textContent = (data.text?.length ?? 0).toLocaleString();
+        document.getElementById('statType').textContent = file.name.split('.').pop().toUpperCase();
+        document.getElementById('outputText').textContent = data.text || '(no text found)';
+        resultsDiv.classList.add('visible');
+      }
+
+    } catch (err) {
+      setStatus('error', '❌ Could not connect to the API. Make sure the backend is running on http://127.0.0.1:8000');
+    }
+
+    uploadBtn.disabled = false;
+  }
+
+  function setStatus(type, message) {
+    statusDiv.className = 'status ' + type;
+    statusDiv.textContent = message;
+  }
+
+  function copyText() {
+    const text = document.getElementById('outputText').textContent;
+    navigator.clipboard.writeText(text).then(() => alert('Text copied!'));
+  }
+</script>
+
+</body>
+</html>
